@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inter Îles Air VA | Virtual Airline pour MSFS & X-Plane</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0a1f24;
+    --night-2:#0f313a;
+    --lagoon:#1f7480;
+    --coral:#ff6b45;
+    --coral-dark:#d9491f;
+    --runway:#f2a900;
+    --chart:#efe6d0;
+    --chart-line:#c9b98a;
+    --ink:#182420;
+    --ink-soft:#5a6a63;
+    --paper-card:#f7f1e2;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--night);
+    color:var(--chart);
+    font-family:'IBM Plex Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{text-decoration:none;color:inherit;}
+  img{display:block;max-width:100%;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .display{font-family:'Big Shoulders Display',sans-serif;}
+
+  a:focus-visible, button:focus-visible, .btn-join:focus-visible, .btn-livery:focus-visible{
+    outline:2px solid var(--coral);
+    outline-offset:3px;
+  }
+
+  /* ============ NAV ============ */
+  nav{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:1.3rem 3rem;
+    position:sticky;top:0;z-index:50;
+    background:rgba(10,31,36,0.86);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(242,230,208,0.12);
+  }
+  .logo{
+    font-family:'Big Shoulders Display',sans-serif;
+    font-weight:800;font-size:1.5rem;letter-spacing:1px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .logo i{color:var(--coral);font-size:1.2rem;}
+  .logo span{color:var(--runway);}
+  .nav-items{display:flex;align-items:center;gap:2rem;}
+  .nav-items a:not(.btn-join){
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.78rem;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--chart);opacity:0.8;
+    position:relative;padding-bottom:4px;
+  }
+  .nav-items a:not(.btn-join):hover{opacity:1;color:var(--coral);}
+  .btn-join{
+    background:var(--coral);color:var(--night);
+    padding:9px 20px;border-radius:3px;font-weight:700;
+    font-family:'IBM Plex Mono',monospace;font-size:0.8rem;letter-spacing:0.5px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .btn-join:hover{background:var(--runway);}
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;
+    min-height:88vh;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    text-align:center;padding:3rem 1.5rem 4rem;
+    overflow:hidden;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(31,116,128,0.35), transparent 60%),
+      linear-gradient(180deg, var(--night) 0%, var(--night-2) 100%);
+  }
+  .chart-map{
+    position:absolute;inset:0;width:100%;height:100%;
+    opacity:0.9;
+    pointer-events:none;
+    z-index: 1;
+  }
+  .route-dashed{
+    fill:none;stroke:rgba(242,230,208,0.35);
+    stroke-width:1.4;stroke-dasharray:6 6;
+  }
+  .waypoint circle{fill:var(--night);stroke:var(--runway);stroke-width:1.6;}
+  .waypoint text{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;
+    fill:rgba(242,230,208,0.85);letter-spacing:1px;
+    stroke:var(--night);stroke-width:3px;paint-order:stroke fill;stroke-linejoin:round;
+  }
+  .plane-marker{fill:var(--coral);}
+
+  /* ============ HERO CONTENT (PARALLAX) ============ */
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    will-change: transform, opacity;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.78rem;letter-spacing:3px;text-transform:uppercase;
+    color:var(--runway);margin-bottom:1.4rem;
+    border:1px solid rgba(242,163,0,0.4);
+    padding:6px 14px;border-radius:2px;
+  }
+  .hero h1{
+    font-family:'Big Shoulders Display',sans-serif;
+    font-weight:900;
+    font-size:clamp(2.6rem,7vw,5.2rem);
+    line-height:0.98;letter-spacing:1px;text-transform:uppercase;
+    margin-bottom:1.3rem;
+  }
+  .hero h1 span{color:var(--coral);}
+  .hero p.lede{
+    font-size:1.05rem;max-width:560px;color:#c7d6d2;
+    margin-bottom:2.6rem;line-height:1.6;
+  }
+
+  .strip-row{
+    display:flex;gap:14px;flex-wrap:wrap;justify-content:center;
+  }
+  .strip{
+    background:var(--paper-card);color:var(--ink);
+    padding:14px 22px;border-radius:2px;
+    min-width:140px;
+    box-shadow:0 8px 18px rgba(0,0,0,0.28);
+    transform:rotate(var(--tilt,0deg));
+    border-left:4px solid var(--coral);
+  }
+  .strip:nth-child(2){--tilt:-1.2deg;border-left-color:var(--runway);}
+  .strip:nth-child(3){--tilt:1deg;border-left-color:var(--lagoon);}
+  .strip-val{
+    font-family:'IBM Plex Mono',monospace;font-weight:600;
+    font-size:1.4rem;display:block;
+  }
+  .strip-label{
+    font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+    letter-spacing:1px;text-transform:uppercase;color:var(--ink-soft);
+  }
+
+  /* ============ SECTIONS ============ */
+  .section{padding:5rem 3rem;max-width:1180px;margin:0 auto;}
+  .section-header{
+    display:flex;align-items:baseline;gap:16px;
+    margin-bottom:2.8rem;
+  }
+  .section-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:0.75rem;
+    color:var(--coral);letter-spacing:2px;text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .section-header h2{
+    font-family:'Big Shoulders Display',sans-serif;
+    font-weight:800;font-size:2.4rem;text-transform:uppercase;letter-spacing:1px;
+  }
+  .section-header p{color:#9fb0aa;font-size:0.95rem;margin-top:0.4rem;}
+
+  /* ---- Fleet (chart paper) ---- */
+  .fleet-wrap{
+    background:var(--chart);
+    border-radius:10px;
+    padding:3.4rem 3rem;
+    position:relative;
+    overflow:hidden;
+  }
+  .fleet-wrap::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(90,106,99,0.07) 39px),
+      repeating-linear-gradient(90deg, transparent, transparent 38px, rgba(90,106,99,0.07) 39px);
+    pointer-events:none;
+  }
+  .fleet-wrap .section-header h2, .fleet-wrap .section-header p{color:var(--ink);}
+  .fleet-wrap .section-header p{color:var(--ink-soft);}
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:22px;position:relative;
+  }
+  .fleet-card{
+    background:#fff;border-radius:6px;overflow:hidden;
+    border:1px solid rgba(24,36,32,0.08);
+    box-shadow:0 4px 14px rgba(24,36,32,0.06);
+    transition:transform 0.25s ease, box-shadow 0.25s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .fleet-card:hover{transform:translateY(-4px);box-shadow:0 14px 28px rgba(24,36,32,0.14);}
+  .fleet-img{
+    height:170px;
+    background:#e2e8f0; /* Fond clair pour faire ressortir l'avion sur fond transparent */
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .fleet-img img{width:100%;height:100%;object-fit:cover;}
+  .fleet-img img.contain { object-fit:contain; padding:10px; } /* Classe pour l'image du 777 */
+  
+  .fleet-info{padding:20px 22px 22px;color:var(--ink); display: flex; flex-direction: column; flex-grow: 1;}
+  .fleet-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:0.68rem;
+    color:var(--coral-dark);letter-spacing:1px;text-transform:uppercase;
+    display:block;margin-bottom:4px;
+  }
+  .fleet-name{font-family:'Big Shoulders Display',sans-serif;font-weight:700;font-size:1.4rem;margin-bottom:8px;}
+  .fleet-desc{font-size:0.9rem;color:var(--ink-soft);line-height:1.5; flex-grow: 1;}
+  .fleet-specs{
+    font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--ink);
+    display:flex;justify-content:space-between;margin-top:16px;
+    padding-top:12px;border-top:1px dashed rgba(24,36,32,0.15);
+  }
+  .fleet-specs i{color:var(--coral-dark);margin-right:5px;}
+
+  /* Boutons de Téléchargement Livrée */
+  .livery-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .btn-livery{
+    flex: 1;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:10px 8px;
+    background:var(--night-2);
+    color:var(--paper-card);
+    border-radius:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.7rem;font-weight:600;letter-spacing:0.5px;
+    text-transform:uppercase;
+    transition:all 0.2s ease;
+    border:1px solid transparent;
+  }
+  .btn-livery:hover{
+    background:var(--coral);
+    color:var(--night);
+    border-color:var(--coral-dark);
+  }
+
+  /* ---- Join steps (flight strips) ---- */
+  .steps{display:flex;gap:18px;flex-wrap:wrap;margin-top:0.5rem;}
+  .step{
+    flex:1;min-width:250px;
+    background:var(--night-2);
+    border-radius:4px;
+    padding:26px 24px;
+    border-left:3px solid var(--coral);
+    position:relative;
+  }
+  .step-num{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--coral);font-size:0.75rem;letter-spacing:1px;
+    display:block;margin-bottom:12px;
+  }
+  .step i{font-size:1.6rem;color:var(--runway);margin-bottom:14px;display:block;}
+  .step h3{font-family:'Big Shoulders Display',sans-serif;font-size:1.25rem;letter-spacing:0.5px;margin-bottom:8px;}
+  .step p{font-size:0.88rem;color:#a9bab3;line-height:1.5;}
+
+  footer{
+    text-align:center;padding:2.4rem;font-size:0.78rem;color:#5a6e68;
+    border-top:1px solid rgba(242,230,208,0.1);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  footer p{margin:3px 0;}
+
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity 0.6s ease, transform 0.6s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1;transform:none;transition:none;}
+    #plane-anim, #plane-anim-2, #plane-anim-3, #plane-anim-4, #plane-anim-5 {display:none;}
+    .hero-content{transform:none !important; opacity:1 !important;}
+  }
+
+  @media (max-width:768px){
+    nav{padding:1rem 1.3rem;flex-wrap:wrap;gap:0.8rem;}
+    .nav-items{gap:1rem;flex-wrap:wrap;justify-content:center;}
+    .section{padding:3.2rem 1.4rem;}
+    .fleet-wrap{padding:2.2rem 1.4rem;}
+    .section-header{flex-direction:column;gap:4px;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><i class="fas fa-plane-departure"></i>INTER ÎLES <span>VA</span></div>
+  <div class="nav-items">
+    <a href="#">Accueil</a>
+    <a href="#">Live Map</a>
+    <a href="#flotte">Flotte</a>
+    <a href="#">Pilotes</a>
+    <a href="#" class="btn-join"><i class="fas fa-user-plus"></i>S'inscrire</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <svg class="chart-map" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid meet">
+    <!-- Routes existantes -->
+    <path class="route-dashed" d="M 180 560 C 380 480, 420 340, 610 300 C 780 265, 860 200, 1010 150"/>
+    <path class="route-dashed" d="M 180 560 C 300 610, 380 620, 420 600"/>
+    <path class="route-dashed" d="M 610 300 C 720 340, 880 380, 1010 150"/>
+
+    <!-- Nouvelles routes : plus de destinations dans l'arc antillais -->
+    <path class="route-dashed" d="M 180 560 C 350 640, 550 660, 700 650 C 730 610, 745 560, 760 520 C 850 480, 920 460, 990 420 C 1000 350, 1005 250, 1010 150"/>
+    <path class="route-dashed" d="M 610 300 C 680 220, 750 140, 830 70"/>
+    <path class="route-dashed" d="M 420 600 C 520 640, 610 660, 700 650"/>
+
+    <!-- Routes long-courrier vers le réseau mondial -->
+    <path class="route-dashed" d="M 610 300 C 420 200, 250 100, 100 40"/>
+    <path class="route-dashed" d="M 610 300 C 480 190, 360 90, 260 30"/>
+    <path class="route-dashed" d="M 610 300 C 590 180, 570 90, 550 22"/>
+    <path class="route-dashed" d="M 610 300 C 750 220, 860 110, 950 35"/>
+    <path class="route-dashed" d="M 610 300 C 820 220, 990 130, 1130 45"/>
+    <path class="route-dashed" d="M 180 560 C 110 460, 60 350, 55 250"/>
+    <path class="route-dashed" d="M 55 250 C 45 320, 40 390, 45 460"/>
+    <path class="route-dashed" d="M 180 560 C 110 610, 80 640, 60 660"/>
+    <path class="route-dashed" d="M 700 650 C 880 660, 1020 660, 1140 655"/>
+    <path class="route-dashed" d="M 1010 150 C 1060 190, 1110 240, 1145 285"/>
+    <path class="route-dashed" d="M 1145 285 C 1150 350, 1150 415, 1150 480"/>
+
+    <g class="waypoint"><circle cx="180" cy="560" r="5"/><text x="192" y="580">TFFF · MARTINIQUE</text></g>
+    <g class="waypoint"><circle cx="610" cy="300" r="5"/><text x="622" y="296">TFFR · GUADELOUPE</text></g>
+    <g class="waypoint"><circle cx="1010" cy="150" r="5"/><text x="1022" y="146">TLPL · SAINTE-LUCIE</text></g>
+    <g class="waypoint"><circle cx="420" cy="600" r="5"/><text x="360" y="628">TDPD · DOMINIQUE</text></g>
+    <g class="waypoint"><circle cx="990" cy="420" r="5"/><text x="1002" y="416">TBPB · BARBADE</text></g>
+    <g class="waypoint"><circle cx="830" cy="70" r="5"/><text x="842" y="66">TAPA · ANTIGUA</text></g>
+    <g class="waypoint"><circle cx="700" cy="650" r="5"/><text x="712" y="670">TGPY · GRENADE</text></g>
+    <g class="waypoint"><circle cx="760" cy="520" r="5"/><text x="772" y="516">TVSV · ST-VINCENT</text></g>
+
+    <!-- Réseau mondial -->
+    <g class="waypoint"><circle cx="100" cy="40" r="5"/><text x="88" y="58">LFPG · PARIS</text></g>
+    <g class="waypoint"><circle cx="260" cy="30" r="5"/><text x="248" y="48">EGLL · LONDRES</text></g>
+    <g class="waypoint"><circle cx="550" cy="22" r="5"/><text x="538" y="40">HECA · LE CAIRE</text></g>
+    <g class="waypoint"><circle cx="950" cy="35" r="5"/><text x="962" y="53">OMDB · DUBAÏ</text></g>
+    <g class="waypoint"><circle cx="1130" cy="45" r="5"/><text x="1118" y="63" text-anchor="end">RJTT · TOKYO</text></g>
+    <g class="waypoint"><circle cx="55" cy="250" r="5"/><text x="67" y="254">KJFK · NEW YORK</text></g>
+    <g class="waypoint"><circle cx="45" cy="460" r="5"/><text x="57" y="464">SCEL · SANTIAGO</text></g>
+    <g class="waypoint"><circle cx="1145" cy="285" r="5"/><text x="1133" y="289" text-anchor="end">YSSY · SYDNEY</text></g>
+    <g class="waypoint"><circle cx="1150" cy="480" r="5"/><text x="1138" y="484" text-anchor="end">NZAA · AUCKLAND</text></g>
+    <g class="waypoint"><circle cx="60" cy="660" r="5"/><text x="72" y="682">FACT · LE CAP</text></g>
+    <g class="waypoint"><circle cx="1140" cy="655" r="5"/><text x="1128" y="677" text-anchor="end">SBGL · RIO</text></g>
+
+    <!-- Avion 1 : boucle Martinique / Guadeloupe / Sainte-Lucie / Dominique -->
+    <g id="plane-anim">
+      <path class="plane-marker" 
+            d="M 14 0 C 14 -2, 12 -3, 8 -3 L 3 -3 L 4 -5 L 1 -5 L 0 -3 L -12 -14 L -15 -14 L -6 -3 L -13 -3 L -17 -8 L -19 -8 L -17 -3 L -19 0 L -17 3 L -19 8 L -17 8 L -13 3 L -6 3 L -15 14 L -12 14 L 0 3 L 1 5 L 4 5 L 3 3 L 8 3 C 12 3, 14 2, 14 0 Z"
+            transform="scale(0.6)"/>
+      <animateMotion dur="18s" repeatCount="indefinite" rotate="auto" path="M 180 560 C 380 480, 420 340, 610 300 C 780 265, 860 200, 1010 150 C 880 380, 720 340, 610 300 C 480 600, 300 610, 180 560 Z"/>
+    </g>
+
+    <!-- Avion 2 : boucle Martinique / Grenade / Saint-Vincent / Barbade / Sainte-Lucie -->
+    <g id="plane-anim-2">
+      <path class="plane-marker" 
+            d="M 14 0 C 14 -2, 12 -3, 8 -3 L 3 -3 L 4 -5 L 1 -5 L 0 -3 L -12 -14 L -15 -14 L -6 -3 L -13 -3 L -17 -8 L -19 -8 L -17 -3 L -19 0 L -17 3 L -19 8 L -17 8 L -13 3 L -6 3 L -15 14 L -12 14 L 0 3 L 1 5 L 4 5 L 3 3 L 8 3 C 12 3, 14 2, 14 0 Z"
+            transform="scale(0.6)"/>
+      <animateMotion dur="24s" begin="2s" repeatCount="indefinite" rotate="auto" path="M 180 560 C 350 640, 550 660, 700 650 C 730 610, 745 560, 760 520 C 850 480, 920 460, 990 420 C 1000 350, 1005 250, 1010 150 C 1005 250, 1000 350, 990 420 C 920 460, 850 480, 760 520 C 745 560, 730 610, 700 650 C 550 660, 350 640, 180 560 Z"/>
+    </g>
+
+    <!-- Avion 3 : navette Guadeloupe / Antigua -->
+    <g id="plane-anim-3">
+      <path class="plane-marker" 
+            d="M 14 0 C 14 -2, 12 -3, 8 -3 L 3 -3 L 4 -5 L 1 -5 L 0 -3 L -12 -14 L -15 -14 L -6 -3 L -13 -3 L -17 -8 L -19 -8 L -17 -3 L -19 0 L -17 3 L -19 8 L -17 8 L -13 3 L -6 3 L -15 14 L -12 14 L 0 3 L 1 5 L 4 5 L 3 3 L 8 3 C 12 3, 14 2, 14 0 Z"
+            transform="scale(0.6)"/>
+      <animateMotion dur="10s" begin="1s" repeatCount="indefinite" rotate="auto" path="M 610 300 C 680 220, 750 140, 830 70 C 750 140, 680 220, 610 300 Z"/>
+    </g>
+
+    <!-- Avion 4 : Guadeloupe / Paris / Londres / Dubaï / Tokyo (boucle réseau nord) -->
+    <g id="plane-anim-4">
+      <path class="plane-marker" 
+            d="M 14 0 C 14 -2, 12 -3, 8 -3 L 3 -3 L 4 -5 L 1 -5 L 0 -3 L -12 -14 L -15 -14 L -6 -3 L -13 -3 L -17 -8 L -19 -8 L -17 -3 L -19 0 L -17 3 L -19 8 L -17 8 L -13 3 L -6 3 L -15 14 L -12 14 L 0 3 L 1 5 L 4 5 L 3 3 L 8 3 C 12 3, 14 2, 14 0 Z"
+            transform="scale(0.6)"/>
+      <animateMotion dur="36s" begin="3s" repeatCount="indefinite" rotate="auto" path="M 610 300 C 420 200, 250 100, 100 40 C 170 65, 200 45, 260 30 C 380 90, 460 60, 550 22 C 700 90, 830 60, 950 35 C 1010 40, 1070 42, 1130 45 C 1000 130, 850 220, 610 300 Z"/>
+    </g>
+
+    <!-- Avion 5 : Martinique / New York / Le Cap / Rio (boucle réseau sud-ouest) -->
+    <g id="plane-anim-5">
+      <path class="plane-marker" 
+            d="M 14 0 C 14 -2, 12 -3, 8 -3 L 3 -3 L 4 -5 L 1 -5 L 0 -3 L -12 -14 L -15 -14 L -6 -3 L -13 -3 L -17 -8 L -19 -8 L -17 -3 L -19 0 L -17 3 L -19 8 L -17 8 L -13 3 L -6 3 L -15 14 L -12 14 L 0 3 L 1 5 L 4 5 L 3 3 L 8 3 C 12 3, 14 2, 14 0 Z"
+            transform="scale(0.6)"/>
+      <animateMotion dur="32s" begin="5s" repeatCount="indefinite" rotate="auto" path="M 180 560 C 110 460, 70 350, 55 250 C 48 320, 45 390, 45 460 C 50 550, 55 610, 60 660 C 300 655, 500 660, 700 650 C 880 660, 1000 658, 1140 655 C 1145 570, 1148 520, 1150 480 C 1148 400, 1147 340, 1145 285 C 1080 220, 1040 185, 1010 150 C 900 200, 750 260, 610 300 C 400 400, 280 480, 180 560 Z"/>
+    </g>
+  </svg>
+
+  <div class="hero-content">
+    <div class="eyebrow">Carte VFR — Secteur Antilles</div>
+    <h1>L'aventure commence<br>sur la <span>piste courte</span></h1>
+    <p class="lede">La compagnie virtuelle du transport inter-îles sur MSFS 2020 & 2024. Alizés changeants, pistes en herbe, approches serrées : chaque vol est un vrai briefing.</p>
+
+    <div class="strip-row">
+      <div class="strip"><span class="strip-val">1 240</span><span class="strip-label">Vols effectués</span></div>
+      <div class="strip"><span class="strip-val">48</span><span class="strip-label">Pilotes actifs</span></div>
+      <div class="strip"><span class="strip-val">3 500h</span><span class="strip-label">Heures de vol</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="flotte">
+  <div class="section-header">
+    <span class="section-tag">02</span>
+    <div><h2>Notre Flotte</h2><p>Trois appareils taillés pour les pistes courtes et les cieux tropicaux.</p></div>
+  </div>
+
+  <div class="fleet-wrap">
+    <div class="grid">
+      <div class="fleet-card reveal">
+        <div class="fleet-img"><img src="c:\Users\chami\Documents\Inter\AuraX_20260708_013306.png" alt="A321NEO"></div>
+        <div class="fleet-info">
+          <span class="fleet-tag">Long-courrier régional</span>
+          <div class="fleet-name">A321NEO</div>
+          <p class="fleet-desc">Le cheval de trait des liaisons principales entre grandes îles.</p>
+          <div class="fleet-specs"><span><i class="fas fa-users"></i>230 PAX</span><span><i class="fas fa-tachometer-alt"></i>470 kts</span></div>
+          <div class="livery-buttons">
+            <a href="#" class="btn-livery"><i class="fas fa-download"></i> MSFS</a>
+            <a href="#" class="btn-livery"><i class="fas fa-download"></i> X-Plane</a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- CARTE DU 777 MISE À JOUR ICI -->
+      <div class="fleet-card reveal">
+        <div class="fleet-img">
+          <!-- J'ai ajouté la classe "contain" pour que l'image du 777 ne soit pas coupée et j'ai inséré votre image -->
+          <img src="c:\Users\chami\Documents\Inter\777.png" alt="777-300ER FlightFactor" class="contain">
+        </div>
+        <div class="fleet-info">
+          <span class="fleet-tag">Piste TQT</span>
+          <div class="fleet-name">777-300ER</div>
+          <p class="fleet-desc">Conçu pour les pistes en herbe de moins de 600 mètres.</p>
+          <div class="fleet-specs"><span><i class="fas fa-users"></i>372 PAX</span><span><i class="fas fa-tachometer-alt"></i>489kts</span></div>
+          <div class="livery-buttons">
+            <a href="#" class="btn-livery"><i class="fas fa-download"></i> MSFS</a>
+            <!-- Le bouton X-Plane lance désormais le téléchargement de la livrée -->
+            <a href="c:\Users\chami\Documents\Inter\INT AIR ILES.rar" download="Livree_777_XPlane" class="btn-livery"><i class="fas fa-download"></i> X-Plane</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="fleet-card reveal">
+        <div class="fleet-img"><img src="c:\Users\chami\Documents\Inter\Microsoft_Flight_Simulator_2024_Screenshot_2026.07.21_-_15.09.11.33.png" alt="A359"></div>
+        <div class="fleet-info">
+          <span class="fleet-tag">Fret & sanitaire</span>
+          <div class="fleet-name">A359</div>
+          <p class="fleet-desc">Pour le fret léger et les liaisons sanitaires d'urgence.</p>
+          <div class="fleet-specs"><span><i class="fas fa-box"></i>Cargo/Pax</span><span><i class="fas fa-tachometer-alt"></i>170 kts</span></div>
+          <div class="livery-buttons">
+            <a href="#" class="btn-livery"><i class="fas fa-download"></i> MSFS</a>
+            <a href="#" class="btn-livery"><i class="fas fa-download"></i> X-Plane</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <span class="section-tag">03</span>
+    <div><h2>Comment nous rejoindre ?</h2><p>Trois étapes, du premier contact au premier décollage.</p></div>
+  </div>
+  <div class="steps">
+    <div class="step reveal">
+      <span class="step-num">ÉTAPE 1</span>
+      <i class="fab fa-discord"></i>
+      <h3>Discord</h3>
+      <p>Rejoignez le serveur et faites connaissance avec la communauté de pilotes.</p>
+    </div>
+    <div class="step reveal">
+      <span class="step-num">ÉTAPE 2</span>
+      <i class="fas fa-file-signature"></i>
+      <h3>Inscription</h3>
+      <p>Créez votre compte pilote sur le système ACARS.</p>
+    </div>
+    <div class="step reveal">
+      <span class="step-num">ÉTAPE 3</span>
+      <i class="fas fa-plane"></i>
+      <h3>Premier vol</h3>
+      <p>Effectuez votre vol de qualification pour valider votre rang.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2024 Inter Îles Air VA. Une compagnie virtuelle pour Microsoft Flight Simulator et X-Plane.</p>
+  <p>Nous ne sommes pas affiliés à une compagnie réelle.</p>
+</footer>
+
+<script>
+  // Effet d'apparition au défilement (flotte, étapes...)
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{threshold:0.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // Effet Parallax sur le contenu du Hero (défilement et opacité)
+  window.addEventListener('scroll', () => {
+    const heroContent = document.querySelector('.hero-content');
+    if (!heroContent) return;
+
+    let scrollPosition = window.scrollY;
+    
+    // Disparition progressive
+    let opacity = Math.max(1 - (scrollPosition / 300), 0);
+    
+    // Déplacement vers le haut
+    let translateY = -(scrollPosition * 0.6);
+
+    heroContent.style.opacity = opacity;
+    heroContent.style.transform = `translateY(${translateY}px)`;
+    
+    // Évite d'interférer avec la souris quand c'est invisible
+    heroContent.style.pointerEvents = opacity === 0 ? 'none' : 'auto';
+  });
+</script>
+
+</body>
+</html>
